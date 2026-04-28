@@ -12,6 +12,7 @@ import type {
   UploadResponse,
   TaxonomyTerm,
   Author,
+  MediaItem,
 } from "@/lib/types";
 
 function getBaseUrl(): string {
@@ -182,6 +183,19 @@ export const api = {
       method: "POST",
       body: fd,
     });
+  },
+
+  media: {
+    list: (params?: { search?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.search) q.set("search", params.search);
+      return apiFetch<{ data: MediaItem[] }>(`/admin/media${q.toString() ? `?${q.toString()}` : ""}`);
+    },
+    create: (body: Pick<MediaItem, "name" | "url" | "alt_text">) =>
+      apiFetch<MediaItem>("/admin/media", { method: "POST", body: JSON.stringify(body) }),
+    update: (id: string, body: Pick<MediaItem, "name" | "url" | "alt_text">) =>
+      apiFetch<MediaItem>(`/admin/media/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    delete: (id: string) => apiFetch<void>(`/admin/media/${id}`, { method: "DELETE" }),
   },
 
   taxonomies: {

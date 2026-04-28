@@ -86,6 +86,15 @@ export interface UploadResponse {
   filename: string;
 }
 
+export interface MediaItem {
+  id: string;
+  name: string;
+  url: string;
+  alt_text: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface TaxonomyTerm {
   id: string;
   type: "keyword" | "category";
