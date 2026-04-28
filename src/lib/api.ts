@@ -1,6 +1,8 @@
 import { getToken } from "@/lib/auth";
 import type {
   LoginResponse,
+  ContentRecord,
+  ContentDetail,
   NavigationFlat,
   NavigationPublicResponse,
   NavigationTreeNode,
@@ -9,6 +11,7 @@ import type {
   Post,
   UploadResponse,
   TaxonomyTerm,
+  Author,
 } from "@/lib/types";
 
 function getBaseUrl(): string {
@@ -103,6 +106,36 @@ export const api = {
     delete: (id: string) => apiFetch<void>(`/admin/posts/${id}`, { method: "DELETE" }),
   },
 
+  contents: {
+    list: (params: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      type?: "post" | "page";
+      locale?: "en" | "id";
+      search?: string;
+    }) => {
+      const q = new URLSearchParams();
+      if (params.page) q.set("page", String(params.page));
+      if (params.limit) q.set("limit", String(params.limit));
+      if (params.status) q.set("status", params.status);
+      if (params.type) q.set("type", params.type);
+      if (params.locale) q.set("locale", params.locale);
+      if (params.search) q.set("search", params.search);
+      const qs = q.toString();
+      return apiFetch<PaginatedResponse<ContentRecord>>(`/contents${qs ? `?${qs}` : ""}`, { auth: false });
+    },
+    getById: (id: string, locale: "en" | "id" = "en") =>
+      apiFetch<ContentDetail>(`/contents/${id}?locale=${locale}`, { auth: false }),
+    getBySlug: (slug: string, locale: "en" | "id" = "en") =>
+      apiFetch<ContentDetail>(`/contents/slug/${slug}?locale=${locale}`, { auth: false }),
+    create: (body: Record<string, unknown>) =>
+      apiFetch("/admin/contents", { method: "POST", body: JSON.stringify(body) }),
+    update: (id: string, body: Record<string, unknown>) =>
+      apiFetch(`/admin/contents/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    delete: (id: string) => apiFetch<void>(`/admin/contents/${id}`, { method: "DELETE" }),
+  },
+
   pages: {
     list: (params: {
       page?: number;
@@ -163,6 +196,19 @@ export const api = {
       if (params.limit) q.set("limit", String(params.limit));
       return apiFetch<{ data: TaxonomyTerm[] }>(`/admin/taxonomies?${q.toString()}`);
     },
+  },
+
+  authors: {
+    list: (params?: { search?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.search) q.set("search", params.search);
+      return apiFetch<{ data: Author[] }>(`/admin/authors${q.toString() ? `?${q.toString()}` : ""}`);
+    },
+    create: (body: Pick<Author, "name" | "photo" | "alt_text">) =>
+      apiFetch<Author>("/admin/authors", { method: "POST", body: JSON.stringify(body) }),
+    update: (id: string, body: Pick<Author, "name" | "photo" | "alt_text">) =>
+      apiFetch<Author>(`/admin/authors/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    delete: (id: string) => apiFetch<void>(`/admin/authors/${id}`, { method: "DELETE" }),
   },
 };
 

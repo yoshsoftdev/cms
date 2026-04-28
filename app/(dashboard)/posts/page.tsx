@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Topbar } from "@/components/cms/topbar";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -64,15 +63,6 @@ export default function PostsListPage() {
 
   return (
     <div className="-m-6 min-h-full bg-slate-50">
-      <Topbar title="Posts">
-        <Link to="/posts/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Post
-          </Button>
-        </Link>
-      </Topbar>
-
       <div className="p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative max-w-sm flex-1">
@@ -100,6 +90,12 @@ export default function PostsListPage() {
               <SelectItem value="published">Published</SelectItem>
             </SelectContent>
           </Select>
+          <Link to="/posts/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Post
+            </Button>
+          </Link>
         </div>
 
         <div className="mt-6 overflow-hidden rounded-lg border border-neutral-200 bg-white">

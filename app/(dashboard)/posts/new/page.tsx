@@ -2,7 +2,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { PostForm, type PostFormValues } from "@/components/forms/post-form";
+import { PostForm, type PostSubmitValues } from "@/components/forms/post-form";
 import { usePostMutations } from "@/hooks/usePosts";
 import { ApiError } from "@/lib/api";
 
@@ -10,7 +10,7 @@ export default function NewPostPage() {
   const navigate = useNavigate();
   const { create } = usePostMutations();
 
-  async function onSubmit(values: PostFormValues) {
+  async function onSubmit(values: PostSubmitValues) {
     try {
       const post = await create.mutateAsync(values);
       toast.success("Postingan dibuat");

@@ -12,6 +12,7 @@ import NewPagePage from "../app/(dashboard)/pages/new/page";
 import EditPagePage from "../app/(dashboard)/pages/[id]/page";
 import NavigationPage from "../app/(dashboard)/navigation/page";
 import MediaPage from "../app/(dashboard)/media/page";
+import AuthorsPage from "../app/(dashboard)/authors/page";
 import SettingsPage from "../app/(dashboard)/settings/page";
 
 function RequireAuth() {
@@ -48,6 +49,7 @@ export function App() {
           <Route path="/pages/:id" element={<EditPagePage />} />
           <Route path="/navigation" element={<NavigationPage />} />
           <Route path="/media" element={<MediaPage />} />
+          <Route path="/authors" element={<AuthorsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
 

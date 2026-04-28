@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { AlignLeft, PenSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import type { PostFormValues } from "@/components/forms/post-form";
+import type { CompletionItem, PostFormValues } from "@/components/forms/post-form";
 
 export interface TocHeading {
   id: string;
@@ -11,40 +12,26 @@ export interface TocHeading {
   text: string;
 }
 
-function parseKeywords(csv: string): string[] {
-  return csv.split(",").map((v) => v.trim()).filter(Boolean);
-}
-
 interface EditorSidebarProps {
   values: PostFormValues;
   headings: TocHeading[];
   activeLang: "en" | "id";
+  completion: CompletionItem[];
+  onMissingItemClick?: (item: CompletionItem) => void;
 }
 
-function parseCategories(csv: string): string[] {
-  return csv.split(",").map((v) => v.trim()).filter(Boolean);
-}
 
-export function EditorSidebar({ values, headings, activeLang }: EditorSidebarProps) {
-  const checks = [
-    { label: "Title", done: !!values.title.trim() },
-    { label: "Content", done: values.content.replace(/<[^>]+>/g, "").trim().length > 50 },
-    { label: "Meta Title", done: !!values.meta_title.trim() },
-    { label: "Meta Description", done: !!values.meta_description.trim() },
-    { label: "Keywords", done: parseKeywords(values.keywords).length > 0 },
-    { label: "Slug", done: !!values.slug.trim() },
-    { label: "Category", done: parseCategories(values.category).length > 0 },
-    { label: "Featured Image", done: !!values.cover_image.trim() },
-    { label: "Author", done: !!values.author.trim() },
-    { label: "Read Time", done: !!values.read_time.trim() },
-  ];
+export function EditorSidebar({ values, headings, activeLang, completion, onMissingItemClick }: EditorSidebarProps) {
+  const checks = completion;
+  const [showMissing, setShowMissing] = useState(false);
 
   const done = checks.filter((item) => item.done).length;
   const percent = Math.round((done / checks.length) * 100);
-  const contentChecks = checks.slice(0, 2);
+  const contentChecks = checks.filter((item) => item.group === "content");
   const seoChecks = checks.slice(2);
   const contentDone = contentChecks.filter((item) => item.done).length;
   const seoDone = seoChecks.filter((item) => item.done).length;
+  const missingItems = checks.filter((item) => !item.done);
 
   return (
     <aside className="hidden h-full w-64 shrink-0 overflow-y-auto overscroll-contain border-r border-slate-200 bg-white lg:block">
@@ -53,10 +40,14 @@ export function EditorSidebar({ values, headings, activeLang }: EditorSidebarPro
         <span className="text-3xl font-semibold leading-none tracking-tight text-slate-900">CMS</span>
       </div>
       <div className="space-y-3 border-b border-slate-200 p-3">
-        <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setShowMissing((prev) => !prev)}
+          className="flex w-full items-center justify-between text-left"
+        >
           <span className="text-lg font-medium leading-none text-slate-900">Completion</span>
           <span className="text-xs font-semibold text-emerald-600">{percent}%</span>
-        </div>
+        </button>
         <div className="h-1.5 rounded-full bg-slate-200">
           <div className="h-1.5 rounded-full bg-emerald-500" style={{ width: `${percent}%` }} />
         </div>
@@ -85,6 +76,21 @@ export function EditorSidebar({ values, headings, activeLang }: EditorSidebarPro
             </div>
           </div>
         </div>
+        {showMissing && missingItems.length > 0 ? (
+          <div className="space-y-1 pt-1">
+            {missingItems.slice(0, 4).map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => onMissingItemClick?.(item)}
+                className="flex w-full items-center gap-1.5 text-left text-[11px] text-slate-500 hover:text-slate-900"
+              >
+                <span className="h-1 w-1 rounded-full bg-slate-400" />
+                {item.label} missing
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
       <div className="px-4 py-5">
         <div className="mb-3 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-700">

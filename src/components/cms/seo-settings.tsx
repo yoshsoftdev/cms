@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { LdJsonPreview } from "@/components/cms/ldjson-preview";
 import { SocialPreview } from "@/components/cms/social-preview";
-import type { ContentStatus, TaxonomyTerm } from "@/lib/types";
+import type { Author, ContentStatus, TaxonomyTerm } from "@/lib/types";
 import type { PostFormValues } from "@/components/forms/post-form";
 
 function CharCounter({ value, min, max }: { value: string; min: number; max: number }) {
@@ -38,6 +38,7 @@ interface SEOSettingsProps {
   setCategoryQuery: (value: string) => void;
   keywordOptions: TaxonomyTerm[];
   categoryOptions: TaxonomyTerm[];
+  authorOptions: Author[];
   onChange: <K extends keyof PostFormValues>(key: K, value: PostFormValues[K]) => void;
 }
 
@@ -73,6 +74,7 @@ export function SEOSettings({
   setCategoryQuery,
   keywordOptions,
   categoryOptions,
+  authorOptions,
   onChange,
 }: SEOSettingsProps) {
   const selectedKeywords = useMemo(() => parseKeywords(values.keywords || ""), [values.keywords]);
@@ -238,7 +240,25 @@ export function SEOSettings({
         <FieldGroup>
           <Field>
             <FieldLabel>Author</FieldLabel>
-            <Input value={values.author} onChange={(e) => onChange("author", e.target.value)} placeholder="Author name" />
+            <Select
+              value={values.author_id || ""}
+              onValueChange={(v) => {
+                const selected = authorOptions.find((item) => item.id === v);
+                onChange("author_id", v);
+                onChange("author", selected?.name ?? "");
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select author" />
+              </SelectTrigger>
+              <SelectContent>
+                {authorOptions.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
         </FieldGroup>
         <FieldGroup>

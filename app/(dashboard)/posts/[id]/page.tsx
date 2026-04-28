@@ -1,9 +1,9 @@
 "use client";
 
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { PostForm, type PostFormValues } from "@/components/forms/post-form";
+import { PostForm, type PostSubmitValues } from "@/components/forms/post-form";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,20 +14,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePostsList, usePostMutations } from "@/hooks/usePosts";
+import { usePostByID, usePostMutations } from "@/hooks/usePosts";
 import { ApiError } from "@/lib/api";
 
 export default function EditPostPage() {
   const params = useParams();
   const id = params.id as string;
   const navigate = useNavigate();
-  const list = usePostsList({ page: 1, limit: 1000 });
+  const detail = usePostByID(id, "en");
   const { update, remove } = usePostMutations();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const post = detail.data;
 
-  const post = useMemo(() => list.data?.data.find((p) => p.id === id), [list.data, id]);
-
-  async function onSubmit(values: PostFormValues) {
+  async function onSubmit(values: PostSubmitValues) {
     try {
       await update.mutateAsync({ id, body: values });
       toast.success("Postingan disimpan");
@@ -46,7 +45,7 @@ export default function EditPostPage() {
     }
   }
 
-  if (list.isLoading) {
+  if (detail.isLoading) {
     return (
       <div className="max-w-3xl space-y-4">
         <Skeleton className="h-10 w-full" />

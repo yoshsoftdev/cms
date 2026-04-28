@@ -3,7 +3,6 @@
 import { Link } from "react-router-dom";
 import { CheckCircle2, FilePenLine, FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Topbar } from "@/components/cms/topbar";
 import { StatsCard } from "@/components/cms/stats-card";
 import { PostCard } from "@/components/cms/post-card";
 import { usePostsList } from "@/hooks/usePosts";
@@ -17,16 +16,15 @@ export default function DashboardHomePage() {
 
   return (
     <div className="-m-6 min-h-full bg-slate-50">
-      <Topbar title="Dashboard">
-        <Link to="/posts/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Post
-          </Button>
-        </Link>
-      </Topbar>
-
       <div className="p-6">
+        <div className="mb-6 flex justify-end">
+          <Link to="/posts/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Post
+            </Button>
+          </Link>
+        </div>
         <div className="grid gap-4 md:grid-cols-3">
           <StatsCard
             title="Total Posts"

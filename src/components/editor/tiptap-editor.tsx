@@ -16,6 +16,20 @@ type SlashCommand = {
   run: () => void;
 };
 
+function extractHeadingsFromHTML(html: string): TocHeading[] {
+  const parser = document.createElement("div");
+  parser.innerHTML = html;
+  const extracted: TocHeading[] = [];
+  parser.querySelectorAll("h1, h2, h3").forEach((el, i) => {
+    const text = el.textContent?.trim() ?? "";
+    const level = Number(el.tagName.replace("H", ""));
+    const id = `heading-${i}-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40)}`;
+    if (!text) return;
+    extracted.push({ id, level, text });
+  });
+  return extracted;
+}
+
 export function TiptapEditor({
   initialContent,
   onChange,
@@ -51,21 +65,15 @@ export function TiptapEditor({
         return false;
       },
     },
+    onCreate: ({ editor: e }) => {
+      if (!onHeadingsChange) return;
+      onHeadingsChange(extractHeadingsFromHTML(e.getHTML()));
+    },
     onUpdate: ({ editor: e }) => {
       const html = e.getHTML();
       onChange(e.getJSON(), html);
       if (onHeadingsChange) {
-        const parser = document.createElement("div");
-        parser.innerHTML = html;
-        const extracted: TocHeading[] = [];
-        parser.querySelectorAll("h1, h2, h3").forEach((el, i) => {
-          const text = el.textContent?.trim() ?? "";
-          const level = Number(el.tagName.replace("H", ""));
-          const id = `heading-${i}-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40)}`;
-          if (!text) return;
-          extracted.push({ id, level, text });
-        });
-        onHeadingsChange(extracted);
+        onHeadingsChange(extractHeadingsFromHTML(html));
       }
     },
   });

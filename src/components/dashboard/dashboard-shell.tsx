@@ -11,6 +11,7 @@ import {
   PanelTop,
   Search,
   Settings,
+  UserRound,
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ const nav = [
   { href: "/pages", label: "Halaman", icon: FolderOpen },
   { href: "/navigation", label: "Navigasi", icon: PanelTop },
   { href: "/media", label: "Media", icon: ImageIcon },
+  { href: "/authors", label: "Authors", icon: UserRound },
   { href: "/settings", label: "Pengaturan", icon: Settings },
 ];
 
@@ -41,6 +43,7 @@ function breadcrumbLabel(pathname: string) {
     "/pages": "Halaman",
     "/navigation": "Navigasi",
     "/media": "Media",
+    "/authors": "Authors",
     "/settings": "Pengaturan",
   };
   if (map[pathname]) return map[pathname];

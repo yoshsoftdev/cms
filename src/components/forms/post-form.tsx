@@ -34,11 +34,21 @@ const schema = z.object({
   category: z.string(),
   publish_date: z.string(),
   author: z.string(),
+  author_id: z.string(),
   read_time: z.string(),
 });
 
 export type PostFormValues = z.infer<typeof schema>;
 type Lang = "en" | "id";
+export type LocalizedDraftValues = Record<Lang, LocalizedDraft>;
+export type PostSubmitValues = PostFormValues & { localized: LocalizedDraftValues };
+export type CompletionItem = {
+  key: string;
+  label: string;
+  done: boolean;
+  group: "content" | "seo";
+  lang?: Lang;
+};
 
 type LocalizedDraft = {
   title: string;
@@ -58,6 +68,10 @@ function safeParseContent(json: string): JSONContent | null {
   }
 }
 
+function plainLength(html: string) {
+  return (html || "").replace(/<[^>]+>/g, "").trim().length;
+}
+
 export function PostForm({
   defaultValues,
   onSubmit,
@@ -65,7 +79,7 @@ export function PostForm({
   submitting,
 }: {
   defaultValues?: Partial<Post>;
-  onSubmit: (values: PostFormValues) => void | Promise<void>;
+  onSubmit: (values: PostSubmitValues) => void | Promise<void>;
   onDelete?: () => void;
   submitting?: boolean;
 }) {
@@ -76,41 +90,42 @@ export function PostForm({
   const [headingsByLang, setHeadingsByLang] = useState<Record<Lang, TocHeading[]>>({ en: [], id: [] });
   const [localizedByLang, setLocalizedByLang] = useState<Record<Lang, LocalizedDraft>>({
     en: {
-      title: defaultValues?.title ?? "",
-      content: defaultValues?.content ?? "",
-      content_json: defaultValues?.content_json ?? "",
-      meta_title: defaultValues?.meta_title ?? "",
-      meta_description: defaultValues?.meta_description ?? "",
-      keywords: defaultValues?.keywords ?? "",
+      title: defaultValues?.localized?.en?.title ?? defaultValues?.title ?? "",
+      content: defaultValues?.localized?.en?.content ?? defaultValues?.content ?? "",
+      content_json: defaultValues?.localized?.en?.content_json ?? defaultValues?.content_json ?? "",
+      meta_title: defaultValues?.localized?.en?.meta_title ?? defaultValues?.meta_title ?? "",
+      meta_description: defaultValues?.localized?.en?.meta_description ?? defaultValues?.meta_description ?? "",
+      keywords: defaultValues?.localized?.en?.keywords ?? defaultValues?.keywords ?? "",
     },
     id: {
-      title: "",
-      content: "",
-      content_json: "",
-      meta_title: "",
-      meta_description: "",
-      keywords: "",
+      title: defaultValues?.localized?.id?.title ?? "",
+      content: defaultValues?.localized?.id?.content ?? "",
+      content_json: defaultValues?.localized?.id?.content_json ?? "",
+      meta_title: defaultValues?.localized?.id?.meta_title ?? "",
+      meta_description: defaultValues?.localized?.id?.meta_description ?? "",
+      keywords: defaultValues?.localized?.id?.keywords ?? "",
     },
   });
 
   const form = useForm<PostFormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      title: defaultValues?.title ?? "",
+      title: defaultValues?.localized?.en?.title ?? defaultValues?.title ?? "",
       slug: defaultValues?.slug ?? "",
-      content: defaultValues?.content ?? "",
-      content_json: defaultValues?.content_json ?? "",
+      content: defaultValues?.localized?.en?.content ?? defaultValues?.content ?? "",
+      content_json: defaultValues?.localized?.en?.content_json ?? defaultValues?.content_json ?? "",
       excerpt: defaultValues?.excerpt ?? "",
       cover_image: defaultValues?.cover_image ?? "",
       status: (defaultValues?.status as ContentStatus) ?? "draft",
-      meta_title: defaultValues?.meta_title ?? "",
-      meta_description: defaultValues?.meta_description ?? "",
+      meta_title: defaultValues?.localized?.en?.meta_title ?? defaultValues?.meta_title ?? "",
+      meta_description: defaultValues?.localized?.en?.meta_description ?? defaultValues?.meta_description ?? "",
       og_image: defaultValues?.og_image ?? "",
       canonical_url: defaultValues?.canonical_url ?? "",
-      keywords: defaultValues?.keywords ?? "",
+      keywords: defaultValues?.localized?.en?.keywords ?? defaultValues?.keywords ?? "",
       category: defaultValues?.category ?? "",
       publish_date: defaultValues?.publish_date ?? "",
       author: defaultValues?.author ?? "",
+      author_id: defaultValues?.author_id ?? "",
       read_time: defaultValues?.read_time ?? "",
     },
   });
@@ -129,6 +144,44 @@ export function PostForm({
     queryKey: ["taxonomy-categories", categoryQuery],
     queryFn: () => api.taxonomies.list({ type: "category", search: categoryQuery, limit: 30 }),
   });
+  const authorOptions = useQuery({
+    queryKey: ["authors"],
+    queryFn: () => api.authors.list(),
+  });
+
+  const completion = useMemo<CompletionItem[]>(() => {
+    const mergedLocalized = {
+      ...localizedByLang,
+      [activeLang]: {
+        title: values.title,
+        content: values.content,
+        content_json: values.content_json,
+        meta_title: values.meta_title,
+        meta_description: values.meta_description,
+        keywords: values.keywords,
+      },
+    };
+    const en = mergedLocalized.en;
+    const id = mergedLocalized.id;
+    const activeLocalized = mergedLocalized[activeLang];
+    return [
+      { key: "content-en", label: "Content EN", done: plainLength(en.content) > 0, group: "content", lang: "en" },
+      { key: "content-id", label: "Content ID", done: plainLength(id.content) > 0, group: "content", lang: "id" },
+      { key: "title", label: `Title (${activeLang.toUpperCase()})`, done: !!activeLocalized.title.trim(), group: "seo", lang: activeLang },
+      { key: "meta-title", label: `Meta Title (${activeLang.toUpperCase()})`, done: !!activeLocalized.meta_title.trim(), group: "seo", lang: activeLang },
+      { key: "meta-description", label: `Meta Description (${activeLang.toUpperCase()})`, done: !!activeLocalized.meta_description.trim(), group: "seo", lang: activeLang },
+      { key: "keywords", label: `Keywords (${activeLang.toUpperCase()})`, done: !!activeLocalized.keywords.trim(), group: "seo", lang: activeLang },
+      { key: "slug", label: "Slug", done: !!values.slug.trim(), group: "seo" },
+      { key: "category", label: "Category", done: !!values.category.trim(), group: "seo" },
+      { key: "featured-image", label: "Featured Image", done: !!values.cover_image.trim(), group: "seo" },
+      { key: "author", label: "Author", done: !!values.author_id.trim(), group: "seo" },
+      { key: "read-time", label: "Read Time", done: !!values.read_time.trim(), group: "seo" },
+    ];
+  }, [activeLang, localizedByLang, values.author_id, values.category, values.content, values.content_json, values.cover_image, values.keywords, values.meta_description, values.meta_title, values.read_time, values.slug, values.title]);
+  const completionPercent = useMemo(
+    () => Math.round((completion.filter((item) => item.done).length / completion.length) * 100),
+    [completion],
+  );
 
   useEffect(() => {
     const local = localizedByLang[activeLang];
@@ -165,9 +218,24 @@ export function PostForm({
     setActiveLang(next);
   }
 
+  function handleMissingItemClick(item: CompletionItem) {
+    if (item.lang && item.lang !== activeLang) {
+      handleLangChange(item.lang);
+    }
+  }
+
   return (
-    <form className="flex h-screen min-h-0 overflow-hidden bg-white" onSubmit={form.handleSubmit((v) => onSubmit(v))}>
-      <EditorSidebar values={values} headings={headings} activeLang={activeLang} />
+    <form
+      className="flex h-screen min-h-0 overflow-hidden bg-white"
+      onSubmit={form.handleSubmit((v) => onSubmit({ ...v, localized: localizedByLang }))}
+    >
+      <EditorSidebar
+        values={values}
+        headings={headings}
+        activeLang={activeLang}
+        completion={completion}
+        onMissingItemClick={handleMissingItemClick}
+      />
       <div className="flex min-w-0 min-h-0 flex-1 flex-col">
       <header className="flex h-14 items-center justify-between border-b border-border bg-background px-4">
         <div className="flex items-center gap-2">
@@ -194,7 +262,16 @@ export function PostForm({
             <Save className="mr-2 h-4 w-4" />
             Save Draft
           </Button>
-          <Button size="sm" type="button" disabled={submitting} onClick={() => void form.handleSubmit((v) => onSubmit({ ...v, status: "published" }))()}>
+          <Button
+            size="sm"
+            type="button"
+            disabled={submitting || completionPercent < 100}
+            title={completionPercent < 100 ? "Complete all checklist items before publishing" : undefined}
+            onClick={() => {
+              if (completionPercent < 100) return;
+              void form.handleSubmit((v) => onSubmit({ ...v, status: "published", localized: localizedByLang }))();
+            }}
+          >
             <Send className="mr-2 h-4 w-4" />
             Publish
           </Button>
@@ -254,6 +331,7 @@ export function PostForm({
                 setCategoryQuery={setCategoryQuery}
                 keywordOptions={keywordOptions.data?.data ?? []}
                 categoryOptions={categoryOptions.data?.data ?? []}
+                authorOptions={authorOptions.data?.data ?? []}
                 onChange={(key, value) => {
                   if (key === "title" || key === "content" || key === "content_json" || key === "meta_title" || key === "meta_description" || key === "keywords") {
                     setLocalizedField(key as keyof LocalizedDraft, value as never);
