@@ -34,6 +34,7 @@ export default function AuthorsPage() {
   const [editing, setEditing] = useState<Author | null>(null);
   const [form, setForm] = useState<AuthorForm>(emptyForm);
   const [deleteID, setDeleteID] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const list = useQuery({
     queryKey: ["authors", search],
@@ -94,6 +95,25 @@ export default function AuthorsPage() {
       setDeleteID(null);
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Gagal menghapus author");
+    }
+  }
+
+  async function onUploadPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const res = await api.upload(file);
+      setForm((prev) => ({ ...prev, photo: res.url }));
+      if (!form.alt_text.trim()) {
+        setForm((prev) => ({ ...prev, alt_text: `Photo of ${prev.name || "author"}` }));
+      }
+      toast.success("Foto author berhasil diunggah");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Gagal upload foto");
+    } finally {
+      setUploading(false);
+      e.currentTarget.value = "";
     }
   }
 
@@ -158,6 +178,8 @@ export default function AuthorsPage() {
             <div className="space-y-2">
               <Label htmlFor="photo">Photo URL</Label>
               <Input id="photo" value={form.photo} onChange={(e) => setForm((v) => ({ ...v, photo: e.target.value }))} />
+              <Input id="photo-file" type="file" accept="image/*" onChange={(e) => void onUploadPhoto(e)} disabled={uploading} />
+              {uploading ? <p className="text-xs text-slate-500">Uploading...</p> : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="alt">Alt Text</Label>

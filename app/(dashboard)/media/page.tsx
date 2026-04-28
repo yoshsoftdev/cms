@@ -51,7 +51,7 @@ export default function MediaPage() {
           <CardTitle>Unggah berkas</CardTitle>
           <CardDescription>
             Mengirim ke endpoint <code className="rounded bg-neutral-100 px-1">POST /admin/upload</code>.
-            URL dikembalikan untuk penyimpanan eksternal (mis. S3).
+            Berkas disimpan ke folder <code className="rounded bg-neutral-100 px-1">cms-be/static/uploads</code>.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
